@@ -59,14 +59,14 @@
 (require 'projectile)
 (setq projectile-globally-ignored-directories
       (append projectile-globally-ignored-directories '(".git"
-							".svn"
-							".hg"
-							"build"
-							".build"
-							".build.*"
-							".cache"
-							".meteor"
-							)))
+                                                        ".svn"
+                                                        ".hg"
+                                                        "build"
+                                                        ".build"
+                                                        ".build.*"
+                                                        ".cache"
+                                                        ".meteor"
+                                                        )))
 (projectile-global-mode)
 (setq projectile-enable-caching t)
 (setq projectile-require-project-root nil)
@@ -89,8 +89,15 @@
 
 ;;;;;;;;;;;;;;;;;;;; misc ;;;;;;;;;;;;;;;;;;;;
 
-;;; no back up files
-(setq make-backup-files nil)
+;;; no back up files in the same folder
+(setq
+ backup-by-copying t      ; don't clobber symlinks
+ backup-directory-alist
+ '(("." . "~/.emacs.d/backup"))    ; don't litter my fs tree
+ delete-old-versions t
+ kept-new-versions 6
+ kept-old-versions 2
+ version-control t)       ; use versioned backups
 
 ;;; remember state between reloads
 (setq save-place-file "~/.emacs.d/saveplace")
@@ -124,8 +131,31 @@
  )
 (load-theme 'sanityinc-tomorrow-day)
 
+;;; whitespace
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+;;; load the .bash_profile for shell
+(cond
+  ((eq window-system 'ns) ; macosx
+   ;; Invoke login shells, so that .profile or .bash_profile is read
+   (setq shell-command-switch "-lc")))
+
+;;; same for interactive subshell
+(setq explicit-bash-args '("--login" "-i"))
+
 ;;;;;;;;;;;;;;;;;;;; bindings ;;;;;;;;;;;;;;;;;;;;
 (define-key evil-normal-state-map (kbd "C-n") 'helm-projectile-find-file)
 
-;;;;;;;;;;;;;;;;;;;; not me ;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;; ocaml ;;;;;;;;;;;;;;;;;;;;
+
+;;; load merlin, requires merlin to be installed with opam
+(setq opam-share (substring (shell-command-to-string "opam config var share 2> /dev/null") 0 -1))
+(add-to-list 'load-path (concat opam-share "/emacs/site-lisp"))
+(require 'merlin)
+
+;;; load on tuareg mode
+(add-hook 'tuareg-mode-hook 'merlin-mode)
+
+
+;;;;;;;;;;;;;;;;;;;; not me ;;;;;;;;;;;;;;;;;;;;
