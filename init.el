@@ -3,6 +3,8 @@
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
+(when (not package-archive-contents)
+    (package-refresh-contents))
 
 
 ;;;;;;;;;;;;;;;;;;;; evil ;;;;;;;;;;;;;;;;;;;;
@@ -132,6 +134,8 @@
 (load-theme 'sanityinc-tomorrow-day)
 
 ;;; whitespace
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 ;;; load the .bash_profile for shell
@@ -146,16 +150,161 @@
 ;;;;;;;;;;;;;;;;;;;; bindings ;;;;;;;;;;;;;;;;;;;;
 (define-key evil-normal-state-map (kbd "C-n") 'helm-projectile-find-file)
 
-
-;;;;;;;;;;;;;;;;;;;; ocaml ;;;;;;;;;;;;;;;;;;;;
-
-;;; load merlin, requires merlin to be installed with opam
-(setq opam-share (substring (shell-command-to-string "opam config var share 2> /dev/null") 0 -1))
-(add-to-list 'load-path (concat opam-share "/emacs/site-lisp"))
-(require 'merlin)
-
-;;; load on tuareg mode
-(add-hook 'tuareg-mode-hook 'merlin-mode)
-
+;;; autocomplete for ocaml
+(setq merlin-use-auto-complete-mode 'easy)
 
 ;;;;;;;;;;;;;;;;;;;; not me ;;;;;;;;;;;;;;;;;;;;
+;; Basic .emacs with a good set of defaults, to be used as template for usage
+;; with OCaml, OPAM, and tuareg
+;;
+;; Requires tuareg or ocaml mode installed on the system
+;;
+;; Author: Louis Gesbert <louis.gesbert@ocamlpro.com>
+;; Released under CC(0)
+
+;; Generic, recommended configuration options
+
+(custom-set-variables
+ '(indent-tabs-mode nil)
+ '(compilation-context-lines 2)
+ '(compilation-error-screen-columns nil)
+ '(compilation-scroll-output t)
+ '(compilation-search-path (quote (nil "src")))
+ '(electric-indent-mode nil)
+ '(next-line-add-newlines nil)
+ '(require-final-newline t)
+ '(sentence-end-double-space nil)
+ '(show-trailing-whitespace t)
+ '(visible-bell t)
+ '(show-paren-mode t)
+ '(next-error-highlight t)
+ '(next-error-highlight-no-select t)
+ '(backup-directory-alist '(("." . "~/.local/share/emacs/backups")))
+ '(ac-use-fuzzy nil)
+ )
+
+;; ANSI color in compilation buffer
+(require 'ansi-color)
+(defun colorize-compilation-buffer ()
+  (toggle-read-only)
+  (ansi-color-apply-on-region (point-min) (point-max))
+  (toggle-read-only))
+(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+
+;; Some key bindings
+
+(global-set-key [f3] 'next-match)
+(defun prev-match () (interactive nil) (next-match -1))
+(global-set-key [(shift f3)] 'prev-match)
+(global-set-key [backtab] 'auto-complete)
+
+;; OCaml configuration
+;;  - better error and backtrace matching
+(defun set-ocaml-error-regexp ()
+  (set
+   'compilation-error-regexp-alist
+   '("[Ff]ile \\(\"\\(.*?\\)\", line \\(-?[0-9]+\\)\\(, characters \\(-?[0-9]+\\)-\\([0-9]+\\)\\)?\\)\\(:\n\\(\\(Warning .*?\\)\\|\\(Error\\)\\):\\)?"
+    2 3 (5 . 6) (9 . 11) 1 (8 compilation-message-face))))
+
+(add-hook 'tuareg-mode-hook 'set-ocaml-error-regexp)
+(add-hook 'ocaml-mode-hook 'set-ocaml-error-regexp)
+;; ## added by OPAM user-setup for emacs / base ## 04e6df2fb0196279508d9d1895d30b61 ## you can edit, but keep this line
+;; Base configuration for OPAM
+
+(defun opam-shell-command-to-string (command)
+  "Similar to shell-command-to-string, but returns nil unless the process
+  returned 0 (shell-command-to-string ignores return value)"
+  (let* ((return-value 0)
+         (return-string
+          (with-output-to-string
+            (setq return-value
+                  (with-current-buffer standard-output
+                    (process-file shell-file-name nil t nil
+                                  shell-command-switch command))))))
+    (if (= return-value 0) return-string nil)))
+
+(defun opam-update-env ()
+  "Update the environment to follow current OPAM switch configuration"
+  (interactive)
+  (let ((env (opam-shell-command-to-string "opam config env --sexp")))
+    (when env
+      (dolist (var (car (read-from-string env)))
+        (setenv (car var) (cadr var))
+        (when (string= (car var) "PATH")
+          (setq exec-path (split-string (cadr var) path-separator)))))))
+
+(opam-update-env)
+
+(setq opam-share
+  (let ((reply (opam-shell-command-to-string "opam config var share")))
+    (when reply (substring reply 0 -1))))
+
+(add-to-list 'load-path (concat opam-share "/emacs/site-lisp"))
+;; OPAM-installed tools automated detection and initialisation
+
+(defun opam-setup-tuareg ()
+  (add-to-list 'load-path (concat opam-share "/tuareg"))
+  (load "tuareg-site-file"))
+
+(defun opam-setup-ocp-indent ()
+  (require 'ocp-indent))
+
+(defun opam-setup-ocp-index ()
+  (require 'ocp-index))
+
+(defun opam-setup-merlin ()
+  (require 'merlin)
+  (add-hook 'tuareg-mode-hook 'merlin-mode t)
+  (add-hook 'caml-mode-hook 'merlin-mode t)
+  (set-default 'ocp-index-use-auto-complete nil)
+  (set-default 'merlin-use-auto-complete-mode 'easy)
+  ;; So you can do it on a mac, where `C-<up>` and `C-<down>` are used
+  ;; by spaces.
+  (define-key merlin-mode-map
+    (kbd "C-c <up>") 'merlin-type-enclosing-go-up)
+  (define-key merlin-mode-map
+    (kbd "C-c <down>") 'merlin-type-enclosing-go-down)
+  (set-face-background 'merlin-type-face "skyblue"))
+
+(defun opam-setup-utop ()
+  (autoload 'utop "utop" "Toplevel for OCaml" t)
+  (autoload 'utop-setup-ocaml-buffer "utop" "Toplevel for OCaml" t)
+  (add-hook 'tuareg-mode-hook 'utop-setup-ocaml-buffer))
+
+(setq opam-tools
+  '(("tuareg" . opam-setup-tuareg)
+    ("ocp-indent" . opam-setup-ocp-indent)
+    ("ocp-index" . opam-setup-ocp-index)
+    ("merlin" . opam-setup-merlin)
+    ("utop" . opam-setup-utop)))
+
+(defun opam-detect-installed-tools ()
+  (let*
+      ((command "opam list --installed --short --safe --color=never")
+       (names (mapcar 'car opam-tools))
+       (command-string (mapconcat 'identity (cons command names) " "))
+       (reply (opam-shell-command-to-string command-string)))
+    (when reply (split-string reply))))
+
+(setq opam-tools-installed (opam-detect-installed-tools))
+
+(defun opam-auto-tools-setup ()
+  (interactive)
+  (dolist
+      (f (mapcar (lambda (x) (cdr (assoc x opam-tools))) opam-tools-installed))
+    (funcall (symbol-function f))))
+
+(opam-auto-tools-setup)
+;; ## end of OPAM user-setup addition for emacs / base ## keep this line
+;; ## added by OPAM user-setup for emacs / tuareg ## 4bd841ebbde819dd00bd2cd248c073a3 ## you can edit, but keep this line
+;; Load tuareg from its original switch when not found in current switch
+(when (not (assoc "tuareg" opam-tools-installed))
+  (add-to-list 'load-path "/Users/slava/.opam/4.02.1/share/tuareg")
+  (load "tuareg-site-file"))
+;; ## end of OPAM user-setup addition for emacs / tuareg ## keep this line
+;; ## added by OPAM user-setup for emacs / ocp-indent ## c6b1b7fc7ac8f410604b25a588b11669 ## you can edit, but keep this line
+;; Load ocp-indent from its original switch when not found in current switch
+(when (not (assoc "ocp-indent" opam-tools-installed))
+  (load-file "/Users/slava/.opam/4.02.1/share/emacs/site-lisp/ocp-indent.el")
+  (setq ocp-indent-path "/Users/slava/.opam/4.02.1/bin/ocp-indent"))
+;; ## end of OPAM user-setup addition for emacs / ocp-indent ## keep this line
