@@ -1,310 +1,338 @@
-;;; init the package manager
-(require 'package)
-(add-to-list 'package-archives
-             '("melpa" . "http://melpa.milkbox.net/packages/") t)
+;-*-Emacs-Lisp-*-
+
+;;; Commentary:
+;;
+;; I have nothing substantial to say here.
+;;
+;;; Code:
+
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
 (package-initialize)
-(when (not package-archive-contents)
-    (package-refresh-contents))
 
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+(add-to-list 'custom-theme-load-path (expand-file-name "themes" user-emacs-directory))
+(add-to-list 'exec-path "/usr/local/bin")
 
-;;;;;;;;;;;;;;;;;;;; evil ;;;;;;;;;;;;;;;;;;;;
-;;; turn on evil
-(require 'evil)
-(evil-mode t)
-(setq evil-leader/in-all-states 1)
-(global-evil-leader-mode)
-(evil-leader/set-leader ",")
-(require 'evil-search-highlight-persist)
-(global-evil-search-highlight-persist t)
-(evil-leader/set-key "<leader>/" 'evil-search-highlight-persist-remove-all)
+;; Just while I'm working on it.
+(add-to-list 'load-path (expand-file-name "octopress-mode" user-emacs-directory))
+(require 'octopress-mode)
 
-;;; use "jk" as escape
-(define-key evil-insert-state-map "j" #'cofi/maybe-exit)
-(evil-define-command cofi/maybe-exit ()
-  :repeat change
-  (interactive)
-  (let ((modified (buffer-modified-p)))
-    (insert "j")
-    (let ((evt (read-event (format "Insert %c to exit insert state" ?k)
-               nil 0.5)))
-      (cond
-       ((null evt) (message ""))
-       ((and (integerp evt) (char-equal evt ?k))
-    (delete-char -1)
-    (set-buffer-modified-p modified)
-    (push 'escape unread-command-events))
-       (t (setq unread-command-events (append unread-command-events
-                          (list evt))))))))
+;; Essential settings.
+(setq inhibit-splash-screen t
+      inhibit-startup-message t
+      inhibit-startup-echo-area-message t)
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(when (boundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))
+(show-paren-mode 1)
+(setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+(global-visual-line-mode nil)
+(setq-default left-fringe-width nil)
+(setq-default indent-tabs-mode nil)
+(eval-after-load "vc" '(setq vc-handled-backends nil))
+(setq vc-follow-symlinks t)
+(setq large-file-warning-threshold nil)
+(setq split-width-threshold nil)
+(setq visible-bell nil)
 
-;;; surround
-(require 'evil-surround)
-(global-evil-surround-mode 1)
+;;; File type overrides.
+(require 'web-mode)
+(add-to-list 'auto-mode-alist '("\\.html$\\'" . web-mode))
 
-;;; matchit beyond brackets
-(require 'evil-matchit)
+(add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
+(defadvice web-mode-highlight-part (around tweak-jsx activate)
+  (if (equal web-mode-content-type "jsx")
+      (let ((web-mode-enable-part-face nil))
+        ad-do-it)
+    ad-do-it))
+
+;;; My own configurations, which are bundled in my dotfiles.
+(require 'project-root)
+(require 'init-utils)
+(require 'init-mac)
+(require 'init-global-functions)
+(require 'init-elpa)
+(require 'init-fonts)
+(require 'init-gtags)
+(require 'init-evil)
+(require 'init-maps)
+(require 'init-w3m)
+(require 'init-php)
+(require 'init-powerline)
+
+(maybe-require-package 'wgrep)
+(maybe-require-package 'wgrep-ag)
+(autoload 'wgrep-ag-setup "wgrep-ag")
+(add-hook 'ag-mode-hook 'wgrep-ag-setup)
+
+(when (maybe-require-package 'exec-path-from-shell)
+  (when (memq window-system '(mac ns))
+    (exec-path-from-shell-initialize)))
+
+(when (string= system-type "gnu/linux")
+      (setq browse-url-browser-function 'browse-url-generic
+            browse-url-generic-program "google-chrome"))
+
+(when (maybe-require-package 'avy)
+  (setq avy-background t))
+
+(maybe-require-package 'ag)
+(maybe-require-package 'auto-complete)
+(maybe-require-package 'dictionary)
+(maybe-require-package 'emmet-mode)
+(maybe-require-package 'flycheck)
+(maybe-require-package 'guide-key)
+(maybe-require-package 'helm)
+(maybe-require-package 'helm-projectile)
+(maybe-require-package 'highlight-symbol)
+(maybe-require-package 'magit)
+(maybe-require-package 'markdown-mode)
+(maybe-require-package 'php-extras)
+(maybe-require-package 'projectile)
+(maybe-require-package 'twittering-mode)
+(maybe-require-package 'web-mode)
+(maybe-require-package 'color-theme-sanityinc-tomorrow)
+(maybe-require-package 'mmm-mode)
+(maybe-require-package 'yaml-mode)
+(maybe-require-package 'js2-mode)
+(maybe-require-package 'key-chord)
+(maybe-require-package 'evil-matchit)
+(maybe-require-package 'evil-rebellion)
+(maybe-require-package 'spacegray-theme)
+(maybe-require-package 'smooth-scrolling)
+
+(require 'mmm-mode)
+(setq mmm-global-mode 'maybe)
+
+(mmm-add-classes
+ '((markdown-cl
+    :submode emacs-lisp-mode
+    :face mmm-declaration-submode-face
+    :front "^```cl[\n\r]+"
+    :back "^```$")))
+
+(mmm-add-mode-ext-class 'markdown-mode nil 'markdown-cl)
+
+;;; Don't display this nag about reverting buffers.
+(setq magit-last-seen-setup-instructions "1.4.0")
+
+;;; Helpers for GNUPG, which I use for encrypting/decrypting secrets.
+(require 'epa-file)
+(epa-file-enable)
+(setq-default epa-file-cache-passphrase-for-symmetric-encryption t)
+
+;;; Always use guide-key mode, it is awesome.
+(guide-key-mode 1)
+(setq-default guide-key/guide-key-sequence t
+              guide-key/idle-delay 0.5)
+
+(defvar show-paren-delay 0
+  "Delay (in seconds) before matching paren is highlighted.")
+
+(defvar backup-dir "~/.emacs.d/backups/")
+(setq backup-directory-alist (list (cons "." backup-dir)))
+(setq make-backup-files nil)
+(setq-default highlight-symbol-idle-delay 1.5)
+
+;;(global-auto-complete-mode t)
+(require 'auto-complete-config)
+(ac-config-default)
+(ac-set-trigger-key "TAB")
+(ac-set-trigger-key "<tab>")
+(setq-default ac-dwim nil)
+(setq-default ac-use-menu-map t)
+(define-key ac-menu-map (kbd "<backtab>") 'ac-previous)
+
+;; projectile
+(defvar projectile-enable-caching nil
+  "Tell Projectile to not cache project file lists.")
+(projectile-global-mode)
+
+;; matchit
 (global-evil-matchit-mode 1)
 
-;;; powerline
-(require 'powerline)
-(powerline-evil-vim-color-theme)
-(display-time-mode t)
-
-
-;;;;;;;;;;;;;;;;;;;; helm ;;;;;;;;;;;;;;;;;;;;
-;;; helm
-(require 'helm-config)
-(helm-mode 1)
-(setq helm-M-x-fuzzy-match t)
-(setq helm-quick-update t)
-
-;;; projectile
-(require 'projectile)
-(setq projectile-globally-ignored-directories
-      (append projectile-globally-ignored-directories '(".git"
-                                                        ".svn"
-                                                        ".hg"
-                                                        "build"
-                                                        ".build"
-                                                        ".build.*"
-                                                        ".cache"
-                                                        ".meteor"
-                                                        )))
-(projectile-global-mode)
-(setq projectile-enable-caching t)
-(setq projectile-require-project-root nil)
-
-;;; ido-flx
-(require 'flx-ido)
-(ido-mode 1)
-(ido-everywhere 1)
-(flx-ido-mode 1)
-;; disable ido faces to see flx highlights.
-(setq ido-enable-flex-matching t)
-(setq ido-use-faces nil)
-
-
-;;; helm/projectile integration
+;; This appears to be necessary only in Linux?
 (require 'helm-projectile)
-(setq projectile-completion-system 'helm)
-(helm-projectile-on)
 
+;;; Use Helm all the time.
+(setq helm-buffers-fuzzy-matching t)
+(helm-mode 1)
 
-;;;;;;;;;;;;;;;;;;;; misc ;;;;;;;;;;;;;;;;;;;;
+;;; Use evil surround mode in all buffers.
+(global-evil-surround-mode 1)
 
-;;; no back up files in the same folder
-(setq
- backup-by-copying t      ; don't clobber symlinks
- backup-directory-alist
- '(("." . "~/.emacs.d/backup"))    ; don't litter my fs tree
- delete-old-versions t
- kept-new-versions 6
- kept-old-versions 2
- version-control t)       ; use versioned backups
+;;; Flycheck mode:
+(add-hook 'flycheck-mode-hook
+          (lambda ()
+            (evil-define-key 'normal flycheck-mode-map (kbd "]e") 'flycheck-next-error)
+            (evil-define-key 'normal flycheck-mode-map (kbd "[e") 'flycheck-previous-error)))
 
-;;; remember state between reloads
-(setq save-place-file "~/.emacs.d/saveplace")
-(setq-default save-place t)
-(require 'saveplace)
+;;; Helm mode:
+(define-key helm-find-files-map (kbd "C-k") 'helm-find-files-up-one-level)
 
-;;; no scroll-bars
-(scroll-bar-mode -1)
+;;; Org mode:
+(evil-leader/set-key-for-mode 'org-mode
+  "t"  'org-set-tags
+  "p"  '(lambda ()
+         (interactive)
+         (org-insert-property-drawer))
+  "d"  'org-deadline
+  "a"  'org-agenda
+  "ns" 'org-narrow-to-subtree
+  "$"  'org-archive-subtree)
 
-;;; remove the toolbar
-(tool-bar-mode -1)
+(add-hook 'org-mode-hook
+          (lambda ()
+            (evil-define-key 'normal org-mode-map (kbd "TAB") 'org-cycle)
+            (evil-define-key 'normal org-mode-map (kbd "C-\\") 'org-insert-heading)
+            (evil-define-key 'insert org-mode-map (kbd "C-\\") 'org-insert-heading)
+            (auto-fill-mode)
+            (flyspell-mode)))
 
-;;; maximized
+;;; Lisp interaction mode & Emacs Lisp mode:
+(add-hook 'lisp-interaction-mode-hook
+          (lambda ()
+            (define-key lisp-interaction-mode-map (kbd "<C-return>") 'eval-last-sexp)))
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (define-key emacs-lisp-mode-map (kbd "<C-return>") 'eval-last-sexp)))
+
+;;; Magit mode (which does not open in evil-mode):
+(add-hook 'magit-mode-hook
+          (lambda ()
+            (define-key magit-mode-map (kbd ",o") 'delete-other-windows)))
+
+;;; Emmet mode:
+(add-hook 'emmet-mode-hook
+          (lambda ()
+            (evil-define-key 'insert emmet-mode-keymap (kbd "C-S-l") 'emmet-next-edit-point)
+            (evil-define-key 'insert emmet-mode-keymap (kbd "C-S-h") 'emmet-prev-edit-point)))
+
+;;; js2 mode:
+(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.es6$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.jsx$" . js2-mode))
 (custom-set-variables
- '(initial-frame-alist (quote ((fullscreen . maximized)))))
+  ;; custom-set-variables was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+ '(js2-allow-keywords-as-property-names t)
+ '(js2-auto-indent-p t)
+ '(js2-basic-offset 2)
+ '(js2-bounce-indent-flag nil)
+ '(js2-bounce-indent-p nil)
+ '(js2-cleanup-whitespace t)
+ '(js2-enter-indents-newline t)
+ '(js2-global-externs (quote ("window" "$" "module" "require" "exports" "getResource")))
+ '(js2-highlight-level 3)
+ '(js2-idle-timer-delay 0.2)
+ '(js2-indent-on-enter-key nil)
+ '(js2-mirror-mode nil)
+ '(js2-mode-indent-ignore-first-tab nil)
+ '(js2-strict-inconsistent-return-warning t)
+ '(js2-use-font-lock-faces nil))
 
-;;; theme
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   (quote
-    ("bb08c73af94ee74453c90422485b29e5643b73b05e8de029a6909af6a3fb3f58" default))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(load-theme 'sanityinc-tomorrow-day)
+;;; Web mode:
+(add-hook 'web-mode-hook
+          (lambda ()
+            (setq web-mode-style-padding 2)
+            (emmet-mode)
+            (flycheck-add-mode 'html-tidy 'web-mode)
+            (flycheck-mode)))
 
-;;; whitespace
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 2)
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+;;; Emacs Lisp mode:
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (turn-on-eldoc-mode)
+            (highlight-symbol-mode)))
 
-;;; load the .bash_profile for shell
-(cond
-  ((eq window-system 'ns) ; macosx
-   ;; Invoke login shells, so that .profile or .bash_profile is read
-   (setq shell-command-switch "-lc")))
+;;; SH mode:
+(add-hook 'sh-mode-hook (lambda ()
+                          (setq sh-basic-offset 2)
+                          (setq sh-indentation 2)))
 
-;;; same for interactive subshell
-(setq explicit-bash-args '("--login" "-i"))
+;;; Let me move the selection like a normal human in the Grizzl results buffer.
+(add-hook 'grizzl-mode-hook (lambda ()
+                              (define-key *grizzl-keymap* (kbd "C-j") 'grizzl-set-selection-1)
+                              (define-key *grizzl-keymap* (kbd "C-k") 'grizzl-set-selection+1)))
 
-;;;;;;;;;;;;;;;;;;;; bindings ;;;;;;;;;;;;;;;;;;;;
-(define-key evil-normal-state-map (kbd "C-n") 'helm-projectile-find-file)
+;;; Javascript mode:
+(add-hook 'javascript-mode-hook (lambda ()
+                                  (set-fill-column 80)
+                                  (turn-on-auto-fill)
+                                  (setq js-indent-level 2)))
 
-;;; autocomplete for ocaml
-(setq merlin-use-auto-complete-mode 'easy)
+;;; Markdown mode:
+(add-hook 'markdown-mode-hook (lambda ()
+                                (set-fill-column 80)
+                                (turn-on-auto-fill)
+                                (flyspell-mode)))
 
-;;;;;;;;;;;;;;;;;;;; not me ;;;;;;;;;;;;;;;;;;;;
-;; Basic .emacs with a good set of defaults, to be used as template for usage
-;; with OCaml, OPAM, and tuareg
-;;
-;; Requires tuareg or ocaml mode installed on the system
-;;
-;; Author: Louis Gesbert <louis.gesbert@ocamlpro.com>
-;; Released under CC(0)
+;;; HTML mode:
+(add-hook 'html-mode-hook (lambda ()
+                            (setq sgml-basic-offset 2)
+                            (setq indent-tabs-mode nil)))
 
-;; Generic, recommended configuration options
-
-(custom-set-variables
- '(indent-tabs-mode nil)
- '(compilation-context-lines 2)
- '(compilation-error-screen-columns nil)
- '(compilation-scroll-output t)
- '(compilation-search-path (quote (nil "src")))
- '(electric-indent-mode nil)
- '(next-line-add-newlines nil)
- '(require-final-newline t)
- '(sentence-end-double-space nil)
- '(show-trailing-whitespace t)
- '(visible-bell t)
- '(show-paren-mode t)
- '(next-error-highlight t)
- '(next-error-highlight-no-select t)
- '(backup-directory-alist '(("." . "~/.local/share/emacs/backups")))
- '(ac-use-fuzzy nil)
- )
-
-;; ANSI color in compilation buffer
-(require 'ansi-color)
-(defun colorize-compilation-buffer ()
-  (toggle-read-only)
-  (ansi-color-apply-on-region (point-min) (point-max))
-  (toggle-read-only))
-(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
-
-;; Some key bindings
-
-(global-set-key [f3] 'next-match)
-(defun prev-match () (interactive nil) (next-match -1))
-(global-set-key [(shift f3)] 'prev-match)
-(global-set-key [backtab] 'auto-complete)
-
-;; OCaml configuration
-;;  - better error and backtrace matching
-(defun set-ocaml-error-regexp ()
-  (set
-   'compilation-error-regexp-alist
-   '("[Ff]ile \\(\"\\(.*?\\)\", line \\(-?[0-9]+\\)\\(, characters \\(-?[0-9]+\\)-\\([0-9]+\\)\\)?\\)\\(:\n\\(\\(Warning .*?\\)\\|\\(Error\\)\\):\\)?"
-    2 3 (5 . 6) (9 . 11) 1 (8 compilation-message-face))))
-
-(add-hook 'tuareg-mode-hook 'set-ocaml-error-regexp)
-(add-hook 'ocaml-mode-hook 'set-ocaml-error-regexp)
-;; ## added by OPAM user-setup for emacs / base ## 04e6df2fb0196279508d9d1895d30b61 ## you can edit, but keep this line
-;; Base configuration for OPAM
-
-(defun opam-shell-command-to-string (command)
-  "Similar to shell-command-to-string, but returns nil unless the process
-  returned 0 (shell-command-to-string ignores return value)"
-  (let* ((return-value 0)
-         (return-string
-          (with-output-to-string
-            (setq return-value
-                  (with-current-buffer standard-output
-                    (process-file shell-file-name nil t nil
-                                  shell-command-switch command))))))
-    (if (= return-value 0) return-string nil)))
-
-(defun opam-update-env ()
-  "Update the environment to follow current OPAM switch configuration"
+(defun helm-project-files ()
   (interactive)
-  (let ((env (opam-shell-command-to-string "opam config env --sexp")))
-    (when env
-      (dolist (var (car (read-from-string env)))
-        (setenv (car var) (cadr var))
-        (when (string= (car var) "PATH")
-          (setq exec-path (split-string (cadr var) path-separator)))))))
+  (helm-other-buffer '(helm-c-source-projectile-files-list) "*Project Files*"))
 
-(opam-update-env)
+;;; key bindings for evil
+;; esc quits
+(define-key evil-normal-state-map [escape] 'keyboard-quit)
+(define-key evil-visual-state-map [escape] 'keyboard-quit)
+(define-key minibuffer-local-map [escape] 'minibuffer-keyboard-quit)
+(define-key minibuffer-local-ns-map [escape] 'minibuffer-keyboard-quit)
+(define-key minibuffer-local-completion-map [escape] 'minibuffer-keyboard-quit)
+(define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
+(define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
 
-(setq opam-share
-  (let ((reply (opam-shell-command-to-string "opam config var share")))
-    (when reply (substring reply 0 -1))))
+;; jk for escape
+(key-chord-mode 1)
+(setq key-chord-two-keys-delay 0.5)
+(key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
 
-(add-to-list 'load-path (concat opam-share "/emacs/site-lisp"))
-;; OPAM-installed tools automated detection and initialisation
+;; Helm shortcuts
+(define-key evil-normal-state-map "\C-n" 'helm-projectile-find-file)
+(define-key evil-normal-state-map "\C-p" 'helm-buffers-list)
 
-(defun opam-setup-tuareg ()
-  (add-to-list 'load-path (concat opam-share "/tuareg"))
-  (load "tuareg-site-file"))
+;; Scrolling
 
-(defun opam-setup-ocp-indent ()
-  (require 'ocp-indent))
+(require 'smooth-scrolling)
+(setq smooth-scroll-margin 3)
 
-(defun opam-setup-ocp-index ()
-  (require 'ocp-index))
+;; Maximize
+(toggle-frame-maximized)
 
-(defun opam-setup-merlin ()
-  (require 'merlin)
-  (add-hook 'tuareg-mode-hook 'merlin-mode t)
-  (add-hook 'caml-mode-hook 'merlin-mode t)
-  (set-default 'ocp-index-use-auto-complete nil)
-  (set-default 'merlin-use-auto-complete-mode 'easy)
-  ;; So you can do it on a mac, where `C-<up>` and `C-<down>` are used
-  ;; by spaces.
-  (define-key merlin-mode-map
-    (kbd "C-c <up>") 'merlin-type-enclosing-go-up)
-  (define-key merlin-mode-map
-    (kbd "C-c <down>") 'merlin-type-enclosing-go-down)
-  (set-face-background 'merlin-type-face "skyblue"))
+;; Font
 
-(defun opam-setup-utop ()
-  (autoload 'utop "utop" "Toplevel for OCaml" t)
-  (autoload 'utop-setup-ocaml-buffer "utop" "Toplevel for OCaml" t)
-  (add-hook 'tuareg-mode-hook 'utop-setup-ocaml-buffer))
+(if (member "Menlo" (font-family-list))
+    (set-face-attribute
+     'default nil :font "Menlo 14"))
 
-(setq opam-tools
-  '(("tuareg" . opam-setup-tuareg)
-    ("ocp-indent" . opam-setup-ocp-indent)
-    ("ocp-index" . opam-setup-ocp-index)
-    ("merlin" . opam-setup-merlin)
-    ("utop" . opam-setup-utop)))
+(put 'narrow-to-region 'disabled nil)
+(load-theme 'spacegray t)
 
-(defun opam-detect-installed-tools ()
-  (let*
-      ((command "opam list --installed --short --safe --color=never")
-       (names (mapcar 'car opam-tools))
-       (command-string (mapconcat 'identity (cons command names) " "))
-       (reply (opam-shell-command-to-string command-string)))
-    (when reply (split-string reply))))
+(when (maybe-require-package 'diminish)
+  (require 'diminish)
+  (eval-after-load "highlight-symbol"
+    '(diminish 'highlight-symbol-mode))
+  (diminish 'helm-mode)
+  (diminish 'guide-key-mode)
+  (diminish 'mmm-mode)
+  (diminish 'undo-tree-mode))
 
-(setq opam-tools-installed (opam-detect-installed-tools))
+;;; sRGB doesn't blend with Powerline's pixmap colors, but is only
+;;; used in OS X. Disable sRGB before setting up Powerline.
+(when (memq window-system '(mac ns))
+  (setq ns-use-srgb-colorspace nil))
 
-(defun opam-auto-tools-setup ()
-  (interactive)
-  (dolist
-      (f (mapcar (lambda (x) (cdr (assoc x opam-tools))) opam-tools-installed))
-    (funcall (symbol-function f))))
-
-(opam-auto-tools-setup)
-;; ## end of OPAM user-setup addition for emacs / base ## keep this line
-;; ## added by OPAM user-setup for emacs / tuareg ## 4bd841ebbde819dd00bd2cd248c073a3 ## you can edit, but keep this line
-;; Load tuareg from its original switch when not found in current switch
-(when (not (assoc "tuareg" opam-tools-installed))
-  (add-to-list 'load-path "/Users/slava/.opam/4.02.1/share/tuareg")
-  (load "tuareg-site-file"))
-;; ## end of OPAM user-setup addition for emacs / tuareg ## keep this line
-;; ## added by OPAM user-setup for emacs / ocp-indent ## c6b1b7fc7ac8f410604b25a588b11669 ## you can edit, but keep this line
-;; Load ocp-indent from its original switch when not found in current switch
-(when (not (assoc "ocp-indent" opam-tools-installed))
-  (load-file "/Users/slava/.opam/4.02.1/share/emacs/site-lisp/ocp-indent.el")
-  (setq ocp-indent-path "/Users/slava/.opam/4.02.1/bin/ocp-indent"))
-;; ## end of OPAM user-setup addition for emacs / ocp-indent ## keep this line
+(provide 'emacs)
+(helm-projectile-switch-project)
+;;; emacs ends here
