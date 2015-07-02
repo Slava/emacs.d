@@ -11,7 +11,6 @@ cookies
 /newsticker
 /ac-comphist.dat
 \#*
-/elpa
 site-lisp/package/
 /swank
 /.mc-lists.el
@@ -30,6 +29,11 @@ site-lisp/package/
 /.cask/
 /.sx/
 saveplace
-ido.last
-projectile-bookmarks.eld
-projectile.cache
+/.emacs.d/ido.last
+/.emacs.d/projectile-bookmarks.eld
+/.emacs.d/projectile.cache
+/.emacs.d/.emacs.desktop
+/.emacs.d/recentf
+/.emacs.d/elpa/
+/.emacs.d/auto-save-list/
+/.emacs.d/ac-comphist.dat

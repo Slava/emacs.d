@@ -1,12 +1,5 @@
 ;-*-Emacs-Lisp-*-
 
-;;; Commentary:
-;;
-;; I have nothing substantial to say here.
-;;
-;;; Code:
-
-
 ;; Added by Package.el.  This must come before configurations of
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
@@ -14,12 +7,7 @@
 (package-initialize)
 
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-(add-to-list 'custom-theme-load-path (expand-file-name "themes" user-emacs-directory))
 (add-to-list 'exec-path "/usr/local/bin")
-
-;; Just while I'm working on it.
-(add-to-list 'load-path (expand-file-name "octopress-mode" user-emacs-directory))
-(require 'octopress-mode)
 
 ;; Essential settings.
 (setq inhibit-splash-screen t
@@ -39,36 +27,14 @@
 (setq large-file-warning-threshold nil)
 (setq split-width-threshold nil)
 (setq visible-bell nil)
+(setq c-basic-offset 2)
+(desktop-save-mode t)
 
-;;; File type overrides.
-(require 'web-mode)
-(add-to-list 'auto-mode-alist '("\\.html$\\'" . web-mode))
-
-(add-to-list 'auto-mode-alist '("\\.jsx$" . web-mode))
-(defadvice web-mode-highlight-part (around tweak-jsx activate)
-  (if (equal web-mode-content-type "jsx")
-      (let ((web-mode-enable-part-face nil))
-        ad-do-it)
-    ad-do-it))
-
-;;; My own configurations, which are bundled in my dotfiles.
 (require 'project-root)
-(require 'init-utils)
-(require 'init-mac)
-(require 'init-global-functions)
 (require 'init-elpa)
-(require 'init-fonts)
-(require 'init-gtags)
+(require 'init-mac)
 (require 'init-evil)
-(require 'init-maps)
-(require 'init-w3m)
-(require 'init-php)
 (require 'init-powerline)
-
-(maybe-require-package 'wgrep)
-(maybe-require-package 'wgrep-ag)
-(autoload 'wgrep-ag-setup "wgrep-ag")
-(add-hook 'ag-mode-hook 'wgrep-ag-setup)
 
 (when (maybe-require-package 'exec-path-from-shell)
   (when (memq window-system '(mac ns))
@@ -77,9 +43,6 @@
 (when (string= system-type "gnu/linux")
       (setq browse-url-browser-function 'browse-url-generic
             browse-url-generic-program "google-chrome"))
-
-(when (maybe-require-package 'avy)
-  (setq avy-background t))
 
 (maybe-require-package 'ag)
 (maybe-require-package 'auto-complete)
@@ -92,17 +55,15 @@
 (maybe-require-package 'highlight-symbol)
 (maybe-require-package 'magit)
 (maybe-require-package 'markdown-mode)
-(maybe-require-package 'php-extras)
 (maybe-require-package 'projectile)
-(maybe-require-package 'twittering-mode)
 (maybe-require-package 'web-mode)
-(maybe-require-package 'color-theme-sanityinc-tomorrow)
 (maybe-require-package 'mmm-mode)
 (maybe-require-package 'yaml-mode)
 (maybe-require-package 'js2-mode)
 (maybe-require-package 'key-chord)
 (maybe-require-package 'evil-matchit)
 (maybe-require-package 'evil-rebellion)
+(maybe-require-package 'powerline)
 (maybe-require-package 'spacegray-theme)
 (maybe-require-package 'smooth-scrolling)
 
@@ -120,11 +81,6 @@
 
 ;;; Don't display this nag about reverting buffers.
 (setq magit-last-seen-setup-instructions "1.4.0")
-
-;;; Helpers for GNUPG, which I use for encrypting/decrypting secrets.
-(require 'epa-file)
-(epa-file-enable)
-(setq-default epa-file-cache-passphrase-for-symmetric-encryption t)
 
 ;;; Always use guide-key mode, it is awesome.
 (guide-key-mode 1)
@@ -152,6 +108,7 @@
 (defvar projectile-enable-caching nil
   "Tell Projectile to not cache project file lists.")
 (projectile-global-mode)
+(setq projectile-require-project-root nil)
 
 ;; matchit
 (global-evil-matchit-mode 1)
@@ -216,7 +173,7 @@
 ;;; js2 mode:
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.es6$" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.jsx$" . js2-mode))
+
 (custom-set-variables
   ;; custom-set-variables was added by Custom.
   ;; If you edit it by hand, you could mess it up, so be careful.
@@ -239,12 +196,30 @@
  '(js2-use-font-lock-faces nil))
 
 ;;; Web mode:
+(require 'web-mode)
 (add-hook 'web-mode-hook
           (lambda ()
+            (setq web-mode-attr-indent-offset 2)
             (setq web-mode-style-padding 2)
+            (setq web-mode-markup-indent-offset 2)
+            (setq web-mode-code-indent-offset 2)
+            (setq web-mode-css-indent-offset 2)
+            (setq web-mode-enable-css-colorization t)
             (emmet-mode)
-            (flycheck-add-mode 'html-tidy 'web-mode)
             (flycheck-mode)))
+
+(setq web-mode-ac-sources-alist
+  '(("css" . (ac-source-css-property))
+    ("html" . (ac-source-words-in-buffer ac-source-abbrev))))
+
+(defun rm-maybe-jsx-mode ()
+  (when (string-equal "jsx" web-mode-content-type)
+    (js2-minor-mode 1)))
+(add-hook 'web-mode-hook 'rm-maybe-jsx-mode)
+(add-to-list 'web-mode-content-types '("jsx" . "\\.jsx?\\'"))
+(add-to-list 'auto-mode-alist '("\\.css?\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.jsx?\\'" . web-mode))
 
 ;;; Emacs Lisp mode:
 (add-hook 'emacs-lisp-mode-hook
@@ -279,10 +254,6 @@
                             (setq sgml-basic-offset 2)
                             (setq indent-tabs-mode nil)))
 
-(defun helm-project-files ()
-  (interactive)
-  (helm-other-buffer '(helm-c-source-projectile-files-list) "*Project Files*"))
-
 ;;; key bindings for evil
 ;; esc quits
 (define-key evil-normal-state-map [escape] 'keyboard-quit)
@@ -293,15 +264,6 @@
 (define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
 (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
 
-;; jk for escape
-(key-chord-mode 1)
-(setq key-chord-two-keys-delay 0.5)
-(key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
-
-;; Helm shortcuts
-(define-key evil-normal-state-map "\C-n" 'helm-projectile-find-file)
-(define-key evil-normal-state-map "\C-p" 'helm-buffers-list)
-
 ;; Scrolling
 
 (require 'smooth-scrolling)
@@ -309,12 +271,6 @@
 
 ;; Maximize
 (toggle-frame-maximized)
-
-;; Font
-
-(if (member "Menlo" (font-family-list))
-    (set-face-attribute
-     'default nil :font "Menlo 14"))
 
 (put 'narrow-to-region 'disabled nil)
 (load-theme 'spacegray t)
@@ -333,6 +289,7 @@
 (when (memq window-system '(mac ns))
   (setq ns-use-srgb-colorspace nil))
 
+(my-powerline-default-theme)
+
 (provide 'emacs)
-(helm-projectile-switch-project)
 ;;; emacs ends here
