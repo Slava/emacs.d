@@ -175,10 +175,10 @@
 (add-to-list 'auto-mode-alist '("\\.es6$" . js2-mode))
 
 (custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(js2-allow-keywords-as-property-names t)
  '(js2-auto-indent-p t)
  '(js2-basic-offset 2)
@@ -186,14 +186,17 @@
  '(js2-bounce-indent-p nil)
  '(js2-cleanup-whitespace t)
  '(js2-enter-indents-newline t)
- '(js2-global-externs (quote ("window" "$" "module" "require" "exports" "getResource")))
+ '(js2-global-externs
+   (quote
+    ("window" "$" "module" "require" "exports" "getResource")))
  '(js2-highlight-level 3)
  '(js2-idle-timer-delay 0.2)
  '(js2-indent-on-enter-key nil)
  '(js2-mirror-mode nil)
  '(js2-mode-indent-ignore-first-tab nil)
  '(js2-strict-inconsistent-return-warning t)
- '(js2-use-font-lock-faces nil))
+ '(js2-use-font-lock-faces nil)
+ '(safe-local-variable-values (quote ((no-byte-compile t)))))
 
 ;;; Web mode:
 (require 'web-mode)
@@ -264,6 +267,65 @@
 (define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
 (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
 
+;;; eshell
+(defun fish-path (path max-len)
+  "Return a potentially trimmed-down version of the directory PATH, replacing
+parent directories with their initial characters to try to get the character
+length of PATH (sans directory slashes) down to MAX-LEN."
+  (let* ((components (split-string (abbreviate-file-name path) "/"))
+         (len (+ (1- (length components))
+                 (reduce '+ components :key 'length)))
+         (str ""))
+    (while (and (> len max-len)
+                (cdr components))
+      (setq str (concat str
+                        (cond ((= 0 (length (car components))) "/")
+                              ((= 1 (length (car components)))
+                               (concat (car components) "/"))
+                              (t
+                               (if (string= "."
+                                            (string (elt (car components) 0)))
+                                   (concat (substring (car components) 0 2)
+                                           "/")
+                                 (string (elt (car components) 0) ?/)))))
+            len (- len (1- (length (car components))))
+            components (cdr components)))
+    (concat str (reduce (lambda (a b) (concat a "/" b)) components))))
+
+(defun rjs-eshell-prompt-function ()
+  (concat (fish-path (eshell/pwd) 40)
+          (if (= (user-uid) 0) " # " " $ ")
+          "\n"))
+(setq eshell-prompt-function 'rjs-eshell-prompt-function)
+
+(defun eshell-here ()
+  "Opens up a new shell in the directory associated with the
+current buffer's file. The eshell is renamed to match that
+directory to make multiple eshell windows easier."
+  (interactive)
+  (let* ((parent (if (buffer-file-name)
+                     (file-name-directory (buffer-file-name))
+                   default-directory))
+         (height (/ (window-total-height) 3))
+         (name   (car (last (split-string parent "/" t)))))
+    (split-window-vertically (- height))
+    (other-window 1)
+    (eshell "new")
+    (rename-buffer (concat "*eshell: " name "*"))
+
+    (insert (concat "ls"))
+    (eshell-send-input)))
+
+(global-set-key (kbd "C-!") 'eshell-here)
+
+(defun eshell/x ()
+  (insert "exit")
+  (eshell-send-input)
+  (delete-window))
+
+(add-hook 'eshell-preoutput-filter-functions
+          'ansi-color-apply)
+
 ;; Scrolling
 
 (require 'smooth-scrolling)
@@ -293,3 +355,9 @@
 
 (provide 'emacs)
 ;;; emacs ends here
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
