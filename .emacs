@@ -28,6 +28,8 @@
 (setq split-width-threshold nil)
 (setq visible-bell nil)
 (setq c-basic-offset 2)
+
+(add-to-list 'desktop-locals-to-save 'buffer-undo-list)
 (desktop-save-mode t)
 
 (require 'project-root)
