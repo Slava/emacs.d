@@ -37,14 +37,6 @@
   (setq-default evil-symbol-word-search t)
   (setq-default evil-shift-width 2)
 
-  (evil-set-initial-state 'git-commit-mode 'insert)
-  (evil-set-initial-state 'magit-log-edit-mode 'insert)
-  (evil-set-initial-state 'sunshine-mode 'emacs)
-  (evil-set-initial-state 'octopress-mode 'emacs)
-  (evil-set-initial-state 'octopress-server-mode 'emacs)
-  (evil-set-initial-state 'octopress-process-mode 'emacs)
-  (evil-set-initial-state 'twittering-edit-mode 'insert)
-
   (add-to-list 'evil-buffer-regexps '("\\*magit:"))
   (add-to-list 'evil-buffer-regexps '("\\*Flycheck"))
   (add-to-list 'evil-emacs-state-modes 'flycheck-error-list-mode)
@@ -89,6 +81,8 @@
   (define-key evil-normal-state-map (kbd "C-S-n") 'helm-find-files)
   (define-key evil-normal-state-map "\C-p" 'helm-projectile-switch-to-buffer)
   (define-key evil-normal-state-map (kbd "C-S-p") 'helm-buffers-list)
+  (define-key evil-normal-state-map (kbd "C-SPC") 'helm-projectile-switch-project)
+  (define-key evil-normal-state-map (kbd "M-r") 'helm-eshell-history)
 
 
   (defun minibuffer-keyboard-quit ()
