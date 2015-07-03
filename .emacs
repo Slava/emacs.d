@@ -66,8 +66,8 @@
 (maybe-require-package 'evil-matchit)
 (maybe-require-package 'evil-rebellion)
 (maybe-require-package 'powerline)
-(maybe-require-package 'spacegray-theme)
 (maybe-require-package 'smooth-scrolling)
+(maybe-require-package 'spacegray-theme)
 
 (require 'mmm-mode)
 (setq mmm-global-mode 'maybe)
@@ -133,6 +133,20 @@
 
 ;;; Helm mode:
 (define-key helm-find-files-map (kbd "C-k") 'helm-find-files-up-one-level)
+(require 'helm)
+;; search in directory on RET by default (instead of opening dired)
+(defun helm-find-files-navigate-forward (orig-fun &rest args)
+  (if (file-directory-p (helm-get-selection))
+      (apply orig-fun args)
+    (helm-maybe-exit-minibuffer)))
+(advice-add 'helm-execute-persistent-action :around #'helm-find-files-navigate-forward)
+(define-key helm-find-files-map (kbd "<return>") 'helm-execute-persistent-action)
+;; backspace goes one dir up
+(defun helm-find-files-navigate-back (orig-fun &rest args)
+  (if (= (length helm-pattern) (length (helm-find-files-initial-input)))
+      (helm-find-files-up-one-level 1)
+    (apply orig-fun args)))
+(advice-add 'helm-ff-delete-char-backward :around #'helm-find-files-navigate-back)
 
 ;;; Org mode:
 (evil-leader/set-key-for-mode 'org-mode
@@ -210,8 +224,7 @@
             (setq web-mode-code-indent-offset 2)
             (setq web-mode-css-indent-offset 2)
             (setq web-mode-enable-css-colorization t)
-            (emmet-mode)
-            (flycheck-mode)))
+            (emmet-mode)))
 
 (setq web-mode-ac-sources-alist
   '(("css" . (ac-source-css-property))
@@ -333,11 +346,11 @@ directory to make multiple eshell windows easier."
 (require 'smooth-scrolling)
 (setq smooth-scroll-margin 3)
 
-;; Maximize
-(toggle-frame-maximized)
-
 (put 'narrow-to-region 'disabled nil)
+
 (load-theme 'spacegray t)
+
+(my-powerline-default-theme)
 
 (when (maybe-require-package 'diminish)
   (require 'diminish)
@@ -346,14 +359,15 @@ directory to make multiple eshell windows easier."
   (diminish 'helm-mode)
   (diminish 'guide-key-mode)
   (diminish 'mmm-mode)
-  (diminish 'undo-tree-mode))
+  (diminish 'undo-tree-mode)
+  (diminish 'auto-complete-mode)
+  (diminish 'eldoc-mode)
+  (diminish 'visual-line-mode))
 
 ;;; sRGB doesn't blend with Powerline's pixmap colors, but is only
 ;;; used in OS X. Disable sRGB before setting up Powerline.
 (when (memq window-system '(mac ns))
   (setq ns-use-srgb-colorspace nil))
-
-(my-powerline-default-theme)
 
 (provide 'emacs)
 ;;; emacs ends here

@@ -1,3 +1,6 @@
+;; powerline.el ends here
+
+
 (when (and (maybe-require-package 'powerline)
            (maybe-require-package 'powerline-evil))
 
@@ -5,24 +8,24 @@
                                       nil))
 
   (defface my-pl-segment1-active
-    '((t (:foreground "black" :background "#E1B61A")))
+    '((t (:foreground "#a7adba" :background "#343d46")))
     "Powerline first segment active face.")
   (defface my-pl-segment1-inactive
-    '((t (:foreground "#CEBFF3" :background "#3A2E58")))
+    '((t (:foreground "#a7adba" :background "#343d46")))
     "Powerline first segment inactive face.")
   
   (defface my-pl-segment2-active
-    '((t (:foreground "#F5E39F" :background "#8A7119")))
+    '((t (:foreground "#c0c5ce" :background "#4f5b66")))
     "Powerline second segment active face.")
   (defface my-pl-segment2-inactive
-    '((t (:foreground "#CEBFF3" :background "#3A2E58")))
+    '((t (:foreground "#c0c5ce" :background "#4f5b66")))
     "Powerline second segment inactive face.")
 
   (defface my-pl-segment3-active
-    '((t (:foreground "#CEBFF3" :background "#3A2E58")))
+    '((t (:foreground "#a7adba" :background "#242a31")))
     "Powerline third segment active face.")
   (defface my-pl-segment3-inactive
-    '((t (:foreground "#CEBFF3" :background "#3A2E58")))
+    '((t (:foreground "#a7adba" :background "#242a31")))
     "Powerline third segment inactive face.")
 
   (defun my-powerline-default-theme ()
@@ -78,8 +81,7 @@
                                        (funcall separator-right seg2 seg1)
                                        (powerline-raw " " seg1)
                                        (powerline-raw "%6p" seg1 'r)
-                                       (when powerline-display-hud
-                                         (powerline-hud seg1 seg3)))))
+                                       (when powerline-display-hud (powerline-hud seg1 seg3)))))
                        (concat (powerline-render lhs)
                                (powerline-fill seg3 (powerline-width rhs))
                                (powerline-render rhs))))))))
