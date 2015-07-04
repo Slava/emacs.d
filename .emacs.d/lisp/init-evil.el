@@ -2,7 +2,7 @@
   ;; Evil leader must be loaded before evil (as documented).
   (global-evil-leader-mode)
 
-  (evil-leader/set-leader ",")
+  (evil-leader/set-leader "SPC")
   (setq evil-leader/in-all-states 1)
   (evil-leader/set-key
     ":"  'eval-expression
@@ -73,9 +73,6 @@
     (kbd "C-u")     'evil-scroll-up
     (kbd "C-w C-w") 'other-window)
 
-  (evil-add-hjkl-bindings org-agenda-mode-map 'emacs
-    "RET" 'org-agenda-switch-to)
-
   (defun next-conflict-marker ()
     (interactive)
     (search-forward-regexp "\\(>>>>\\|====\\|<<<<\\)" (point-max) t)
@@ -86,9 +83,133 @@
     (search-backward-regexp "\\(>>>>\\|====\\|<<<<\\)" (point-min) t)
     (move-beginning-of-line nil))
 
-  ;; Global bindings.
-  (evil-define-key 'normal org-mode-map (kbd "]n") 'org-forward-heading-same-level)
-  (evil-define-key 'normal org-mode-map (kbd "[n") 'org-backward-heading-same-level)
+  ;;; Org mode:
+  (defun bb/org-eol-call (fun)
+    "Go to end of line and call provided function"
+    (end-of-line)
+    (funcall fun)
+    (evil-append nil))
+
+  (defun bb/org-insert-item ()
+    (interactive)
+    (if (not (org-in-item-p))
+        (bb/org-eol-call (lambda () (insert "\n- ")))
+      (bb/org-eol-call 'org-insert-item)))
+
+  (use-package
+   org
+   :config
+   (progn
+     (evil-define-key 'normal org-mode-map
+
+       ;; Movement
+       "gJ" 'outline-next-visible-heading
+       "gK" 'outline-previous-visible-heading
+       "gj" 'org-forward-heading-same-level
+       "gk" 'org-backward-heading-same-level
+       "gh" 'outline-up-heading
+       (kbd "M-n") 'next-error
+       (kbd "M-p") 'previous-error
+       "$" 'org-end-of-line
+       "^" 'org-beginning-of-line
+
+       ;; Insertion of headings and items
+       "gO" (lambda () (interactive)
+              (bb/org-eol-call 'org-insert-heading-after-current)
+              (org-metaright))
+       "go" (lambda () (interactive)
+              (bb/org-eol-call 'org-insert-heading-after-current))
+       "gT" (lambda () (interactive)
+              (bb/org-eol-call 'org-insert-heading-after-current)
+              (org-metaright)
+              (org-todo))
+       "gt" (lambda () (interactive)
+              (bb/org-eol-call 'org-insert-heading-after-current)
+              (org-todo))
+       "gI" (lambda () (interactive)
+              (bb/org-insert-item)
+              (org-metaright))
+       "gi" 'bb/org-insert-item
+
+       ;; Common keys
+       "-" 'org-ctrl-c-minus
+       "gc" 'org-ctrl-c-ctrl-c
+       "g*" 'org-ctrl-c-star
+       (kbd "g RET") 'org-ctrl-c-ret
+
+       ;; Insertions and setters
+       "g-" 'org-table-insert-hline
+       "gp" 'org-set-property
+       "g." 'org-time-stamp
+       "g!" 'org-time-stamp-inactive
+       "gf" 'org-footnote-action
+       "gl" 'org-insert-link
+       "t" 'org-todo
+
+       ;; Clocking
+       "gxi" 'org-clock-in
+       "gxo" 'org-clock-out
+       "gxx" 'org-clock-in-last
+       "gxd" 'org-clock-display
+       "gxr" 'org-clock-report
+
+       ;; Other
+       "gs" 'org-sort
+       "g/" 'org-sparse-tree
+       (kbd "g SPC") 'org-remove-occur-highlights
+       (kbd "TAB") 'org-cycle)
+
+     ;; ";t" 'org-show-todo-tree
+     ;; ";a" 'org-agenda
+
+     (mapc (lambda (state)
+             (evil-define-key state org-mode-map
+               (kbd "M-l") 'org-metaright
+               (kbd "M-h") 'org-metaleft
+               (kbd "M-k") 'org-metaup
+               (kbd "M-j") 'org-metadown
+               (kbd "M-L") 'org-shiftmetaright
+               (kbd "M-H") 'org-shiftmetaleft
+               (kbd "M-K") 'org-shiftmetaup
+               (kbd "M-J") 'org-shiftmetadown
+               (kbd "M-o") '(lambda () (interactive)
+                              (bb/org-eol-call
+                               '(lambda()
+                                  (org-insert-heading)
+                                  (org-metaright))))
+               (kbd "M-t") '(lambda () (interactive)
+                              (bb/org-eol-call
+                               '(lambda()
+                                  (org-insert-todo-heading nil)
+                                  (org-metaright))))))
+           '(normal insert))
+
+     (evil-leader/set-key-for-mode 'org-mode
+       "oh" 'helm-org-headlines)
+
+     (setq org-log-done 'time)
+     (setq org-clock-into-drawer t)
+
+     (evil-leader/set-key
+       "oa" 'org-agenda
+       "oc" 'org-capture)
+
+     (add-hook
+      'org-mode-hook
+      (lambda () (interactive)
+        (org-indent-mode)
+        (visual-line-mode)))
+
+     (use-package
+      org-agenda
+      :config
+      (progn
+        (setq org-agenda-window-setup 'current-window)
+        (define-key org-agenda-mode-map "j" 'org-agenda-next-line)
+        (define-key org-agenda-mode-map "k" 'org-agenda-previous-line)
+        (define-key org-agenda-mode-map "n" 'org-agenda-goto-date)
+        (define-key org-agenda-mode-map "p" 'org-agenda-capture)
+        (define-key org-agenda-mode-map ":" 'evil-ex)))))
 
   ;; jk for escape
   (key-chord-mode 1)
