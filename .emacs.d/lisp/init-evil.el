@@ -219,9 +219,13 @@
         (define-key org-agenda-mode-map ":" 'evil-ex)))))
 
   ;; jk for escape
-  (key-chord-mode 1)
-  (setq key-chord-two-keys-delay 0.5)
-  (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
+  (use-package
+    key-chord
+    :config
+    (progn
+      (key-chord-mode 1)
+      (setq key-chord-two-keys-delay 0.5)
+      (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)))
 
   ;; Helm shortcuts
   (define-key evil-normal-state-map "\C-n" 'helm-projectile-find-file)
