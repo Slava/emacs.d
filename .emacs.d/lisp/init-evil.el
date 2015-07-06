@@ -1,3 +1,6 @@
+(maybe-require-package 'use-package)
+(require 'use-package)
+
 (when (maybe-require-package 'evil-leader)
   ;; Evil leader must be loaded before evil (as documented).
   (global-evil-leader-mode)
@@ -49,7 +52,8 @@
   (evil-set-initial-state 'magit-commit-mode 'normal)
   (evil-define-key 'normal magit-mode-map
     "j" 'magit-goto-next-section
-    "k" 'magit-goto-previous-section)
+    "k" 'magit-goto-previous-section
+    "TAB" 'magit-cycle-section)
   (evil-define-key 'normal magit-log-mode-map
     "j" 'magit-goto-next-section
     "k" 'magit-goto-previous-section)
@@ -131,6 +135,9 @@
               (org-metaright))
        "gi" 'bb/org-insert-item
 
+       "<"  'org-metaleft
+       ">"  'org-metaright
+
        ;; Common keys
        "-" 'org-ctrl-c-minus
        "gc" 'org-ctrl-c-ctrl-c
@@ -159,9 +166,6 @@
        (kbd "g SPC") 'org-remove-occur-highlights
        (kbd "TAB") 'org-cycle)
 
-     ;; ";t" 'org-show-todo-tree
-     ;; ";a" 'org-agenda
-
      (mapc (lambda (state)
              (evil-define-key state org-mode-map
                (kbd "M-l") 'org-metaright
@@ -184,15 +188,18 @@
                                   (org-metaright))))))
            '(normal insert))
 
-     (evil-leader/set-key-for-mode 'org-mode
-       "oh" 'helm-org-headlines)
-
      (setq org-log-done 'time)
      (setq org-clock-into-drawer t)
 
-     (evil-leader/set-key
+     (evil-leader/set-key-for-mode 'org-mode
        "oa" 'org-agenda
-       "oc" 'org-capture)
+       "oc" 'org-capture
+       "oh" 'helm-org-in-buffer-headings
+       "ns" 'org-narrow-to-subtree
+       "ws" 'widen
+       "md" 'org-deadline
+       "ms" 'org-schedule
+       "mt" 'org-todo)
 
      (add-hook
       'org-mode-hook

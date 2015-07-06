@@ -6,7 +6,7 @@
 ;;
 ;;; Code:
 
-(defvar project-root-markers '(".git" ".svn" ".hg" ".meteor")
+(defvar project-root-markers '(".git" ".svn" ".hg" ".meteor" ".dropbox" "package.json")
   "Files or directories that indicate the root of a project.")
 
 (defun project-root ()

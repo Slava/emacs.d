@@ -148,24 +148,6 @@
     (apply orig-fun args)))
 (advice-add 'helm-ff-delete-char-backward :around #'helm-find-files-navigate-back)
 
-;;; Org mode:
-(evil-leader/set-key-for-mode 'org-mode
-  "t"  'org-set-tags
-  "p"  '(lambda ()
-         (interactive)
-         (org-insert-property-drawer))
-  "d"  'org-deadline
-  "a"  'org-agenda
-  "ns" 'org-narrow-to-subtree
-  "$"  'org-archive-subtree)
-
-(add-hook 'org-mode-hook
-          (lambda ()
-            (evil-define-key 'normal org-mode-map (kbd "TAB") 'org-cycle)
-            (evil-define-key 'normal org-mode-map (kbd "C-\\") 'org-insert-heading)
-            (evil-define-key 'insert org-mode-map (kbd "C-\\") 'org-insert-heading)
-            (auto-fill-mode)
-            (flyspell-mode)))
 
 ;;; Lisp interaction mode & Emacs Lisp mode:
 (add-hook 'lisp-interaction-mode-hook
@@ -174,11 +156,6 @@
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (define-key emacs-lisp-mode-map (kbd "<C-return>") 'eval-last-sexp)))
-
-;;; Magit mode (which does not open in evil-mode):
-(add-hook 'magit-mode-hook
-          (lambda ()
-            (define-key magit-mode-map (kbd ",o") 'delete-other-windows)))
 
 ;;; Emmet mode:
 (add-hook 'emmet-mode-hook
@@ -212,6 +189,8 @@
  '(js2-mode-indent-ignore-first-tab nil)
  '(js2-strict-inconsistent-return-warning t)
  '(js2-use-font-lock-faces nil)
+ '(org-refile-use-outline-path (quote file))
+ '(org-startup-indented t)
  '(safe-local-variable-values (quote ((no-byte-compile t)))))
 
 ;;; Web mode:
@@ -341,6 +320,71 @@ directory to make multiple eshell windows easier."
 (add-hook 'eshell-preoutput-filter-functions
           'ansi-color-apply)
 
+(defun delete-process-at-point ()
+  (interactive)
+  (let ((process (get-text-property (point) 'tabulated-list-id)))
+    (cond ((and process
+                (processp process))
+           (delete-process process)
+           (revert-buffer))
+          (t
+           (error "no process at point!")))))
+
+(define-key process-menu-mode-map (kbd "C-c k") 'delete-process-at-point)
+
+(defun xah-open-file-at-cursor ()
+  "Open the file path under cursor.
+If there is text selection, uses the text selection for path.
+If the path starts with “http://”, open the URL in browser.
+Input path can be {relative, full path, URL}.
+Path may have a trailing “:‹n›” that indicates line number. If so, jump to that line number.
+If path does not have a file extension, automatically try with “.el” for elisp files.
+This command is similar to `find-file-at-point' but without prompting for confirmation.
+
+URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'"
+  (interactive)
+  (let ((ξpath (if (use-region-p)
+                   (buffer-substring-no-properties (region-beginning) (region-end))
+                 (let (p0 p1 p2)
+                   (setq p0 (point))
+                   ;; chars that are likely to be delimiters of full path, e.g. space, tabs, brakets.
+                   (skip-chars-backward "^  \"\t\n`'|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\`")
+                   (setq p1 (point))
+                   (goto-char p0)
+                   (skip-chars-forward "^  \"\t\n`'|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\'")
+                   (setq p2 (point))
+                   (goto-char p0)
+                   (buffer-substring-no-properties p1 p2)))))
+    (if (string-match-p "\\`https?://" ξpath)
+        (browse-url ξpath)
+      (progn ; not starting “http://”
+        (if (string-match "^\\`\\(.+?\\):\\([0-9]+\\)\\(:\\([0-9]+\\)\\)?\\'" ξpath)
+            (progn
+              (let (
+                    (ξfpath (match-string 1 ξpath))
+                    (ξline-num (string-to-number (match-string 2 ξpath))))
+                (if (file-exists-p ξfpath)
+                    (progn
+                      (find-file ξfpath)
+                      (goto-char 1)
+                      (forward-line (1- ξline-num)))
+                  (progn
+                    (when (y-or-n-p (format "file doesn't exist: 「%s」. Create?" ξfpath))
+                      (find-file ξfpath)))))))))))
+
+(evil-define-key normal eshell-mode-map
+  "go" 'xah-open-file-at-cursor)
+
+(defun eshell/clear ()
+  (interactive)
+  (let ((inhibit-read-only t))
+    (erase-buffer)))
+
+(add-hook
+ 'eshell-mode-hook
+ '(lambda ()
+    (eshell/export "NODE_NO_READLINE=1")))
+
 ;; Scrolling
 
 (require 'smooth-scrolling)
@@ -376,4 +420,7 @@ directory to make multiple eshell windows easier."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(helm-candidate-number ((t (:foreground "selectedMenuItemColor"))))
+ '(helm-ff-directory ((t (:foreground "#c0c5ce" :weight bold))))
+ '(helm-ff-file ((t (:inherit default))))
+ '(helm-selection ((t (:background "#343d46" :distant-foreground "black")))))
