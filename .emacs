@@ -405,7 +405,7 @@ URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'"
   (diminish 'mmm-mode)
   (diminish 'undo-tree-mode)
   (diminish 'auto-complete-mode)
-  (diminish 'eldoc-mode)
+  (eval-after-load "eldoc" '(diminish 'eldoc-mode))
   (diminish 'visual-line-mode))
 
 ;;; sRGB doesn't blend with Powerline's pixmap colors, but is only
