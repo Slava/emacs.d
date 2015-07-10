@@ -423,4 +423,5 @@ URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'"
  '(helm-candidate-number ((t (:foreground "selectedMenuItemColor"))))
  '(helm-ff-directory ((t (:foreground "#c0c5ce" :weight bold))))
  '(helm-ff-file ((t (:inherit default))))
- '(helm-selection ((t (:background "#343d46" :distant-foreground "black")))))
+ '(helm-selection ((t (:background "#343d46" :distant-foreground "black"))))
+ '(js2-function-call ((t (:inherit default :foreground "#EBCB8B")))))
