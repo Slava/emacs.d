@@ -64,7 +64,6 @@
 (maybe-require-package 'js2-mode)
 (maybe-require-package 'key-chord)
 (maybe-require-package 'evil-matchit)
-(maybe-require-package 'evil-rebellion)
 (maybe-require-package 'powerline)
 (maybe-require-package 'smooth-scrolling)
 (maybe-require-package 'spacegray-theme)
@@ -319,6 +318,11 @@ directory to make multiple eshell windows easier."
 
 (add-hook 'eshell-preoutput-filter-functions
           'ansi-color-apply)
+
+(add-hook 'eshell-mode-hook
+          (lambda ()
+           (setenv "PAGER" "cat"))
+           (setenv "EDITOR" "emacsclient"))
 
 (defun delete-process-at-point ()
   (interactive)
