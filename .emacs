@@ -287,8 +287,8 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 
 (defun rjs-eshell-prompt-function ()
   (concat (fish-path (eshell/pwd) 40)
-          (if (= (user-uid) 0) " # " " $ ")
-          "\n"))
+          (if (= (user-uid) 0) " # " " ♪ ")))
+
 (setq eshell-prompt-function 'rjs-eshell-prompt-function)
 
 (defun eshell-here ()
@@ -311,18 +311,12 @@ directory to make multiple eshell windows easier."
 
 (global-set-key (kbd "C-!") 'eshell-here)
 
-(defun eshell/x ()
-  (insert "exit")
-  (eshell-send-input)
-  (delete-window))
-
 (add-hook 'eshell-preoutput-filter-functions
           'ansi-color-apply)
 
 (add-hook 'eshell-mode-hook
-          (lambda ()
-           (setenv "PAGER" "cat"))
-           (setenv "EDITOR" "emacsclient"))
+          (setenv "PAGER" "cat")
+          (setenv "EDITOR" "emacsclient"))
 
 (defun delete-process-at-point ()
   (interactive)
