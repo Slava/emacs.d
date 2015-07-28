@@ -287,7 +287,7 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 
 (defun rjs-eshell-prompt-function ()
   (concat (fish-path (eshell/pwd) 40)
-          (if (= (user-uid) 0) " # " " ♪ ")))
+          (if (= (user-uid) 0) " # " " ♪ ") "\n"))
 
 (setq eshell-prompt-function 'rjs-eshell-prompt-function)
 
