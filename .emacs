@@ -171,6 +171,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(css-indent-offset 2)
+ '(js-indent-level 2)
  '(js2-allow-keywords-as-property-names t)
  '(js2-auto-indent-p t)
  '(js2-basic-offset 2)
@@ -187,8 +189,16 @@
  '(js2-mirror-mode nil)
  '(js2-mode-indent-ignore-first-tab nil)
  '(js2-strict-inconsistent-return-warning t)
+ '(js2-strict-trailing-comma-warning nil)
  '(js2-use-font-lock-faces nil)
+ '(org-agenda-files (quote ("~/Dropbox (Personal)/notes/notes.org")))
+ '(org-format-latex-options
+   (quote
+    (:foreground default :background default :scale 1.3 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers
+                 ("begin" "$1" "$" "$$" "\\(" "\\["))))
+ '(org-hide-emphasis-markers t)
  '(org-refile-use-outline-path (quote file))
+ '(org-src-fontify-natively t)
  '(org-startup-indented t)
  '(safe-local-variable-values (quote ((no-byte-compile t)))))
 
@@ -287,8 +297,8 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 
 (defun rjs-eshell-prompt-function ()
   (concat (fish-path (eshell/pwd) 40)
-          (if (= (user-uid) 0) " # " " ♪ ") "\n"))
-
+          (if (= (user-uid) 0) " # " " $ ")
+          "\n"))
 (setq eshell-prompt-function 'rjs-eshell-prompt-function)
 
 (defun eshell-here ()
@@ -311,12 +321,13 @@ directory to make multiple eshell windows easier."
 
 (global-set-key (kbd "C-!") 'eshell-here)
 
+(defun eshell/x ()
+  (insert "exit")
+  (eshell-send-input)
+  (delete-window))
+
 (add-hook 'eshell-preoutput-filter-functions
           'ansi-color-apply)
-
-(add-hook 'eshell-mode-hook
-          (setenv "PAGER" "cat")
-          (setenv "EDITOR" "emacsclient"))
 
 (defun delete-process-at-point ()
   (interactive)
@@ -383,6 +394,15 @@ URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'"
  '(lambda ()
     (eshell/export "NODE_NO_READLINE=1")))
 
+(add-hook
+ 'eshell-first-time-mode-hook
+  (lambda ()
+    (setq
+     eshell-visual-commands
+     (append
+      '("mutt" "vim" "screen" "lftp" "ipython" "telnet" "ssh" "node" "npm")
+       eshell-visual-commands))))
+
 ;; Scrolling
 
 (require 'smooth-scrolling)
@@ -403,7 +423,7 @@ URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'"
   (diminish 'mmm-mode)
   (diminish 'undo-tree-mode)
   (diminish 'auto-complete-mode)
-  (eval-after-load "eldoc" '(diminish 'eldoc-mode))
+  (diminish 'eldoc-mode)
   (diminish 'visual-line-mode))
 
 ;;; sRGB doesn't blend with Powerline's pixmap colors, but is only

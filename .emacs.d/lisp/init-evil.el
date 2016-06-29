@@ -17,7 +17,7 @@
     "g"  'magit-status
     "h"  'fontify-and-browse    ;; HTML-ize the buffer and browse the result
     "l"  'whitespace-mode       ;; Show invisible characters
-    "o"  'delete-other-windows  ;; C-w o
+    "o"  'ffap                  ;; navigate to file under cursor
     "s"  'ag-project            ;; Ag search from project's root
     "r"  (lambda () (interactive) (font-lock-fontify-buffer) (redraw-display))
     "S"  'delete-trailing-whitespace
@@ -193,6 +193,7 @@
 
      (evil-leader/set-key-for-mode 'org-mode
        "oa" 'org-agenda
+       "a" (kbd "SPC o a n")
        "oc" 'org-capture
        "oh" 'helm-org-in-buffer-headings
        "ns" 'org-narrow-to-subtree
@@ -219,13 +220,9 @@
         (define-key org-agenda-mode-map ":" 'evil-ex)))))
 
   ;; jk for escape
-  (use-package
-    key-chord
-    :config
-    (progn
-      (key-chord-mode 1)
-      (setq key-chord-two-keys-delay 0.5)
-      (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)))
+  (key-chord-mode 1)
+  (setq key-chord-two-keys-delay 0.5)
+  (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
 
   ;; Helm shortcuts
   (define-key evil-normal-state-map "\C-n" 'helm-projectile-find-file)
